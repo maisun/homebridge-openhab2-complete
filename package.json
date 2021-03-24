@@ -1,6 +1,6 @@
 {
-  "name": "homebridge-openhab2-complete",
-  "version": "1.2.0",
+  "name": "homebridge-oh2",
+  "version": "0.2.2",
   "description": "A homebridge plugin for openHAB, that has the expectation to fully support all Services offered by Apple's Homekit Accessory Protocol (HAP)",
   "license": "GPLV3",
   "preferGlobal": true,
@@ -9,12 +9,7 @@
     "email": "frank@steilerdev.de",
     "name": "Frank Steiler"
   },
-  "keywords": [
-    "homebridge",
-    "homebridge-plugin",
-    "openHAB2",
-    "homekit"
-  ],
+  "keywords": ["homebridge", "homebridge-plugin", "openHAB2", "homekit"],
   "repository": {
     "type": "git",
     "url": "https://github.com/steilerDev/homebridge-openhab2-complete"
