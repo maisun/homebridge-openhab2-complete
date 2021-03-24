@@ -63,10 +63,15 @@ class OpenHAB {
     }
 
     isOnline() {
-        let myURL = this._getURL(`/rest/items`);
-        const response = syncRequest('GET', myURL);
-        this._log.debug(`Online request for openHAB (${myURL}) resulted in status code ${response.statusCode}`);
-        return response.statusCode === 200;
+        try {
+          let myURL = this._getURL(`/rest/items`);
+          const response = syncRequest('GET', myURL);
+          this._log.debug(`Online request for openHAB (${myURL}) resulted in status code ${response.statusCode}`);
+          return response.statusCode === 200;
+        } catch (e) {
+          this._log.warn(`Unable to retrieve openHAB URL ${myURL}: ${e}`);
+          return false;
+        }
     }
 
     getState(habItem, callback) {
@@ -137,7 +142,10 @@ class OpenHAB {
         request({
             url: myURL,
             method: 'POST',
-            body: command
+            body: command,
+            headers: {
+                'Content-Type': 'text/plain'
+            }
         },
         function(error, response) {
             if(error) {
@@ -307,10 +315,18 @@ class OpenHAB {
     // This function is called before a value received from openHAB was passed to the cache or homebridge application
     _cleanOpenHABState(value) {
         // This checks if the value is a number (eventually followed by a unit) and extracts only the number
-        let matchedValue =  value.match(/^\d+((\.|,)\d*)*/i)
+        let matchedValue =  value.match(/^\d+((\.|,)\d*)*/i);
         if (matchedValue) {
-            this._log.debug(`Recognized number with potential unit (${value}), extracting only the number: ${matchedValue[0]}`);
-            return matchedValue[0];
+            // This checks if the value is a number followed by a scientific exponent (e.g. `7E+1`), normalizing notation
+            let exponentMatch = value.match(/E\+\d*/i);
+            if(exponentMatch) {
+                let tempValue = matchedValue[0] * Math.pow(10, parseInt(exponentMatch[0].substring(2)));
+                this._log.debug(`Recognized number with potential unit and scientific exponent (${value}), normalizing to ${tempValue}`);
+                return `${tempValue}`;
+            } else {
+                this._log.debug(`Recognized number with potential unit (${value}), extracting only the number: ${matchedValue[0]}`);
+                return matchedValue[0];
+            }
         } else {
             return value;
         }
