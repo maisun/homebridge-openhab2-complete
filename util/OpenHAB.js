@@ -63,15 +63,10 @@ class OpenHAB {
     }
 
     isOnline() {
-        try {
-          let myURL = this._getURL(`/rest/items`);
-          const response = syncRequest('GET', myURL);
-          this._log.debug(`Online request for openHAB (${myURL}) resulted in status code ${response.statusCode}`);
-          return response.statusCode === 200;
-        } catch (e) {
-          this._log.warn(`Unable to retrieve openHAB URL ${myURL}: ${e}`);
-          return false;
-        }
+        let myURL = this._getURL(`/rest/items`);
+        const response = syncRequest('GET', myURL);
+        this._log.debug(`Online request for openHAB (${myURL}) resulted in status code ${response.statusCode}`);
+        return response.statusCode === 200;
     }
 
     getState(habItem, callback) {
@@ -232,6 +227,31 @@ class OpenHAB {
         }
     }
 
+    getOpenHABAPIVersion() {
+        this._log.debug(`Trying to identify openHAB API Version for host (${this._hostname})...`);
+        let myURL = this._getURL(`/rest/`);
+        const response = syncRequest('GET', myURL);
+        if (response.statusCode !== 200) {
+            return new Error(`Unable to get item values: HTTP code ${response.statusCode}!`);
+        } else {
+            const parsedBody = JSON.parse(response.body);
+            let version = parseInt(parsedBody.version);
+            this._log.debug(`openHAB API Version for host (${this._hostname}) is (${version}).`);
+            return version;
+        }
+    }
+
+    getItemsTopic() {
+        if (typeof this._apiVersion === 'undefined') {
+            this._apiVersion = this.getOpenHABAPIVersion();
+        }
+        if(this._apiVersion >= 4) {
+            return 'openhab/items/';
+        }
+        else {
+            return 'smarthome/items/';
+        }
+    }
 
     subscribe(habItem, callback) {
         if(!this._subscriptions[habItem]) {
@@ -242,14 +262,14 @@ class OpenHAB {
     }
 
     startSubscription() {
-        let myURL = this._getURL('/rest/events',`topics=smarthome/items/`);
+        let myURL = this._getURL('/rest/events',`topics=${this.getItemsTopic()}`);
         const CLOSED = 2;
 
         let source = new EventSource(myURL);
         source.onmessage = function (eventPayload) {
             let eventData = JSON.parse(eventPayload.data);
             if (eventData.type === "ItemStateChangedEvent") {
-                let item = eventData.topic.replace("smarthome/items/", "").replace("/statechanged", "");
+                let item = eventData.topic.replace(this.getItemsTopic(), "").replace("/statechanged", "");
                 let value = this._cleanOpenHABState(JSON.parse(eventData.payload).value);
 
                 if(this._subscriptions[item] !== undefined) {
@@ -287,18 +307,10 @@ class OpenHAB {
     // This function is called before a value received from openHAB was passed to the cache or homebridge application
     _cleanOpenHABState(value) {
         // This checks if the value is a number (eventually followed by a unit) and extracts only the number
-        let matchedValue =  value.match(/^\d+((\.|,)\d*)*/i);
+        let matchedValue =  value.match(/^\d+((\.|,)\d*)*/i)
         if (matchedValue) {
-            // This checks if the value is a number followed by a scientific exponent (e.g. `7E+1`), normalizing notation
-            let exponentMatch = value.match(/E\+\d*/i);
-            if(exponentMatch) {
-                let tempValue = matchedValue[0] * Math.pow(10, parseInt(exponentMatch[0].substring(2)));
-                this._log.debug(`Recognized number with potential unit and scientific exponent (${value}), normalizing to ${tempValue}`);
-                return `${tempValue}`;
-            } else {
-                this._log.debug(`Recognized number with potential unit (${value}), extracting only the number: ${matchedValue[0]}`);
-                return matchedValue[0];
-            }
+            this._log.debug(`Recognized number with potential unit (${value}), extracting only the number: ${matchedValue[0]}`);
+            return matchedValue[0];
         } else {
             return value;
         }
