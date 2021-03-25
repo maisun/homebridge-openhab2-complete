@@ -30,8 +30,7 @@ function addCurrentHeatingCoolingStateCharacteristic(service) {
             switch(modeItemCapability) {
                 case "Heating":
                     currentHeatingCoolingStateCharacteristic.setProps({
-                    //Changed to remove OFF option for heating
-                        validValues: [HEAT]
+                        validValues: [OFF,HEAT]
                     });
                     break;
                 case "Cooling":
