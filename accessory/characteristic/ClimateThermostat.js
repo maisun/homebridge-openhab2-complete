@@ -30,7 +30,8 @@ function addCurrentHeatingCoolingStateCharacteristic(service) {
             switch(modeItemCapability) {
                 case "Heating":
                     currentHeatingCoolingStateCharacteristic.setProps({
-                        validValues: [OFF,HEAT]
+                    //Changed to remove OFF option for heating
+                        validValues: [HEAT]
                     });
                     break;
                 case "Cooling":
@@ -128,7 +129,9 @@ function addTargetHeatingCoolingStateCharacteristic(service) {
 
             addBinarySensorActorCharacteristicWithTransformation.bind(this)(service, targetHeatingCoolingStateCharacteristic, {item: CLIMATE_THERMOSTAT_CONFIG.heatingItem, inverted: CLIMATE_THERMOSTAT_CONFIG.heatingItemInverted}, transformation);
             targetHeatingCoolingStateCharacteristic.setProps({
-                validValues: [HEAT,AUTO]
+                //validValues: [HEAT,AUTO]
+                //Remove AUTO as otherwise it shows a button under thermostat in Home app
+                validValues: [HEAT]
             });
         } else if (coolingItem) {
             this._log.debug(`Creating 'CurrentHeatingCoolingState' characteristic for ${this.name} with coolingItem (${coolingItem})`);

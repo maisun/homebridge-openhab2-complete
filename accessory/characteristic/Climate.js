@@ -48,7 +48,8 @@ function addRotationSpeedCharacteristic(service, optional) {
     rotationSpeedCharacteristic.setProps({
         minValue: thisMinSpeed,
         maxValue: thisMaxSpeed,
-        minTempStep: thisMinStep
+        //Fix a typo
+        minStep: thisMinStep
     });
 
     this._log.debug(`Applied minValue ${thisMinSpeed}, maxValue ${thisMaxSpeed} and minStep ${thisMinStep} for fan speed`);

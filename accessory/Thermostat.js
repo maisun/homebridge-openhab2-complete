@@ -20,15 +20,12 @@ class ThermostatAccessory extends Accessory {
     constructor(platform, config) {
         super(platform, config);
         this._services.unshift(this._getAccessoryInformationService('Thermostat'));
-        this._services.push(this._getPrimaryService(config));
+        this._services.push(this._getPrimaryService());
     }
 
-    _getPrimaryService(config) {
+    _getPrimaryService() {
         this._log.debug(`Creating thermostat service for ${this.name}`);
         let primaryService = new this.Service.Thermostat(this.name);
-         primaryService.getCharacteristic(this.Characteristic.TargetHeatingCoolingState).setProps({
-                    validValues: config.allowedModes
-         });
         addCurrentTemperatureCharacteristic.bind(this)(primaryService);
         addTargetTemperatureCharacteristic.bind(this)(primaryService);
         addCurrentRelativeHumidityCharacteristic.bind(this)(primaryService, true);
